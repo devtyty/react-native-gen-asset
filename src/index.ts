@@ -64,7 +64,7 @@ export type ${AssetHelper.capitalize(
     )} = keyof typeof ${assetConfig.assetName};\n`;
 
     if (stringifyImport && stringifyImport !== "") {
-      const newFile = Bun.file(fullPath + "/index.gen.ts");
+      const newFile = Bun.file(fullPath + "/index.ts");
       newFile.write(stringifyImport);
     }
   }
