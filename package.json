@@ -1,0 +1,17 @@
+{
+  "name": "react-native-gen-asset",
+  "private": false,
+  "module": "index.ts",
+  "version": "1.0.0-beta.0",
+  "type": "module",
+  "scripts": {
+    "dev:watch": "bun build ./src/* --outdir ./dist --watch --sourcemap"
+  },
+  "bin": "dist/index.js",
+  "devDependencies": {
+    "@types/bun": "^1.3.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
