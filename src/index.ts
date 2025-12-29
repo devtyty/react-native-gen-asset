@@ -1,51 +1,62 @@
 #!/usr/bin/env bun
 
-import type { IAssetConfig } from "./types";
+import type { IAsset, IAssetConfig, IOuputAsset } from "./types";
 import { readdir } from "node:fs/promises";
-import { AssetHelper } from "./utils";
 
 const configFileName = "asset.config.json";
-
 const REGEX_EXTENSION_ASSET = /\.(svg|png|apng|jpg|jpeg|webp|json|riv|ttf)$/gm;
 
-async function handleGenAssets() {
-  const configFile = Bun.file(configFileName);
+enum FileType {
+  SVG = "svg",
+  PNG = "png",
+  JPG = "JPG",
+  JPEG = "jpeg",
+  WEBP = "webp",
+  JSON = "json",
+  RIVE = "riv",
+}
 
-  const content: IAssetConfig = await configFile.json();
+function capitalize(text: string) {
+  const arraySplitString = text.trim().split(/[-_\s]/);
 
-  for (const assetConfig of content.assets) {
-    const pathDir = assetConfig.pathDir;
+  return arraySplitString.reduce((pre, next) => {
+    return pre + next.slice(0, 1).toUpperCase() + next.slice(1, next.length);
+  }, "");
+}
 
-    const fullPath = process.cwd() + pathDir;
+async function processFolderAsset(asset: IAsset): Promise<IOuputAsset> {
+  const pathDir = asset.pathDir;
 
-    let stringifyImport = "";
+  const fullPath = process.cwd() + pathDir;
 
-    const filesName = await readdir(fullPath);
+  let fileDataContent = "";
 
-    for (const index in filesName) {
-      const file = filesName[index];
+  const filesName = await readdir(fullPath);
 
-      if (!file) {
-        continue;
-      }
+  for (const index in filesName) {
+    const file = filesName[index];
 
-      /// ignore files scale up @2x, @3x
-      if (/@[\d,.]+x/gm.test(file)) {
-        continue;
-      }
+    if (!file) {
+      continue;
+    }
 
-      /// validate các extension file support
-      if (!REGEX_EXTENSION_ASSET.test(file)) {
-        continue;
-      }
+    /// ignore scale up files @2x, @3x
+    if (/@[\d,.]+x/gm.test(file)) {
+      continue;
+    }
 
-      const newData = {
-        path: file,
-        name: AssetHelper.capitalize(file.replace(REGEX_EXTENSION_ASSET, "")),
-      };
+    /// validate các extension file support
+    if (!REGEX_EXTENSION_ASSET.test(file)) {
+      continue;
+    }
 
-      /// set record to export
-      stringifyImport += `
+    const newData = {
+      path: file,
+      name: capitalize(file.replace(REGEX_EXTENSION_ASSET, "")),
+    };
+
+    /// set record to export
+    fileDataContent += `
   /** How it display
     *
     * ![${newData.name}](${fullPath + "/" + newData.path})
@@ -53,21 +64,39 @@ async function handleGenAssets() {
   ${
     newData.name[0]!.toLowerCase() + newData.name.slice(1, newData.name.length)
   }: require("./${newData.path}"),`;
-    }
-
-    stringifyImport = `export const ${
-      assetConfig.assetName
-    } = {${stringifyImport}\n};
-
-export type ${AssetHelper.capitalize(
-      [assetConfig.assetName, "type"].join(" "),
-    )} = keyof typeof ${assetConfig.assetName};\n`;
-
-    if (stringifyImport && stringifyImport !== "") {
-      const newFile = Bun.file(fullPath + "/index.ts");
-      newFile.write(stringifyImport);
-    }
   }
+
+  fileDataContent = `export const ${asset.assetName} = {${fileDataContent}\n};
+
+export type ${capitalize(
+    [asset.assetName, "type"].join(" "),
+  )} = keyof typeof ${asset.assetName};\n`;
+
+  return {
+    fileDataContent: fileDataContent,
+    genFilePath: fullPath + "/index.ts",
+  };
 }
 
-handleGenAssets();
+// main entry
+(async function main() {
+  const configFile = Bun.file(configFileName);
+  const content: IAssetConfig = await configFile.json();
+
+  // handle format declaration files
+  const results = await Promise.all(
+    content.assets.map((asset) => processFolderAsset(asset)),
+  );
+
+  // create file generating
+  await Promise.all(
+    results.map((item) => {
+      if (item.fileDataContent !== "") {
+        const newFile = Bun.file(item.genFilePath);
+        return newFile.write(item.fileDataContent);
+      }
+
+      return Promise.resolve();
+    }),
+  );
+})();

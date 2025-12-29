@@ -1,11 +1,46 @@
 {
-  "name": "react-native-gen-asset",
-  "private": false,
+  "name": "@megabeelabs/react-native-gen-asset",
   "module": "index.ts",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0",
   "type": "module",
+  "author": {
+    "email": "truongvanty1608@gmail.com",
+    "name": "Megabee"
+  },
+  "repository": {
+    "url": "https://github.com/devtyty/react-native-gen-asset"
+  },
+  "keywords": [
+    "react-native",
+    "react",
+    "gen-asset",
+    "react-native-gen-asset",
+    "code-gen",
+    "boilerplate"
+  ],
+  "release": {
+    "branches": [
+      "+([0-9])?(.{+([0-9]),x}).x",
+      "main",
+      "next",
+      "next-major",
+      {
+        "name": "beta",
+        "prerelease": true
+      },
+      {
+        "name": "alpha",
+        "prerelease": true
+      }
+    ],
+    "repositoryUrl": "https://github.com/devtyty/react-native-gen-asset"
+  },
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
-    "dev:watch": "bun build ./src/* --outdir ./dist --watch --sourcemap"
+    "dev:watch": "bun build ./src/* --outdir ./dist --watch",
+    "publish": "bun publish"
   },
   "bin": "dist/index.js",
   "devDependencies": {
@@ -13,5 +48,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
   }
 }

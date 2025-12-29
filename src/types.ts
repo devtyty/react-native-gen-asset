@@ -6,3 +6,8 @@ export interface IAsset {
 export interface IAssetConfig {
   assets: IAsset[];
 }
+
+export interface IOuputAsset {
+  genFilePath: string;
+  fileDataContent: string;
+}

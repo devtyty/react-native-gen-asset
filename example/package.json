@@ -8,7 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "gen:asset": "bunx react-native-gen-asset"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
