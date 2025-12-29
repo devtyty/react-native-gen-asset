@@ -1,7 +1,7 @@
 {
   "name": "@megabeelabs/react-native-gen-asset",
   "module": "index.ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "author": {
     "email": "truongvanty1608@gmail.com",
@@ -39,8 +39,7 @@
     "dist/*"
   ],
   "scripts": {
-    "dev:watch": "bun build ./src/* --outdir ./dist --watch",
-    "publish": "bun publish"
+    "dev:watch": "bun build ./src/* --outdir ./dist --watch"
   },
   "bin": "dist/index.js",
   "devDependencies": {

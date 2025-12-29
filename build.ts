@@ -1,4 +1,4 @@
-await Bun.build({
+Bun.build({
   entrypoints: ["./src/index.ts"],
   outdir: "./dist",
   target: "node",
