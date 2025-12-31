@@ -1,3 +1,5 @@
 {
-  "assets": [{ "pathDir": "/assets/images", "assetName": "images" }]
+  "assets": [
+    { "pathDir": "/assets/images", "assetName": "images", "webSupport": true }
+  ]
 }
