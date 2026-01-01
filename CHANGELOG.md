@@ -1,6 +1,8 @@
-# Release Notes
+# Changelog
 
 ## v1.1.0
+
+### Features
 
 - Support svg transform format by babel
 - Support pure web platform generating from public folder
