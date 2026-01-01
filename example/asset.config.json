@@ -1,3 +1,9 @@
 {
-  "assets": [{ "pathDir": "/assets/images", "assetName": "images" }]
+  "assets": [
+    {
+      "pathDir": "/assets/images",
+      "assetName": "images"
+    },
+    { "pathDir": "/assets/svgs", "useSvgTransform": true }
+  ]
 }

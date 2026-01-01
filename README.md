@@ -1,4 +1,4 @@
-# react-native-gen-asset
+# @megabeelabs/react-native-gen-asset
 
 A lightweight JavaScript tool to generate centralized boilerplate for assets (images, lotties, etc.) in React Native projects.
 
@@ -18,15 +18,15 @@ Built with Bun for fast execution ⚡
 ## 📦 Installation
 
 ```bash
-bun add -D react-native-gen-asset
+bun add -D @megabeelabs/react-native-gen-asset
 ```
 
 Or with npm / yarn:
 
 ```bash
-npm install -D react-native-gen-asset
+npm install -D @megabeelabs/react-native-gen-asset
 # or
-yarn add -D react-native-gen-asset
+yarn add -D @megabeelabs/react-native-gen-asset
 ```
 
 ## 🛠️ Setup
@@ -52,10 +52,13 @@ Example configuration:
 
 **Config options**
 
-| Field       | Type     | Description                       |
-| :---------- | -------- | --------------------------------- |
-| `pathDir`   | `string` | Relative path to asset directory  |
-| `assetName` | `string` | Name of the exported asset object |
+| Field       | Type     | Description                       | default |
+| :---------- | -------- | --------------------------------- | ------- |
+| `pathDir`   | `string` | Relative path to asset directory  | |
+| `assetName` | `string` | Name of the exported asset object | |
+| `useSvgTransform` | `boolean` | Support generate svg file by component | |
+| `platform` | `native`, `web` | Output supported | `native` |
+| `outputFile` | `string` | Customize output file | Relative path |
 
 ### 2️⃣ Project structure example
 
@@ -74,7 +77,7 @@ project-root
 ### ▶️ Generate assets
 
 ```bash
-bunx react-native-gen-asset
+bunx @megabeelabs/react-native-gen-asset
 ```
 
 Or add a script:
@@ -82,7 +85,7 @@ Or add a script:
 ```json
 {
   "scripts": {
-    "gen:assets": "react-native-gen-asset"
+    "gen:assets": "bunx @megabeelabs/react-native-gen-asset"
   }
 }
 ```
@@ -106,10 +109,61 @@ export const images = {
 ## 📌 Usage in React Native
 
 ```tsx
-import { images } from '@/generated/assets/images';
-import { lotties } from '@/generated/assets/lotties';
+import { images } from '@/assets/images';
+import { lotties } from '@/assets/lotties';
 
 <Image source={images.logo} />
 
 <LottieView source={lotties.loading} autoPlay />
+```
+
+## 🪄 Use svg transformation by babel
+
+Config:
+
+```json
+{
+  "assets": [
+    {
+      "pathDir": "/assets/images",
+      "assetName": "images"
+    },
+    { "pathDir": "/assets/svgs", "useSvgTransform": true }
+  ]
+}
+```
+
+Example:
+
+```tsx
+import { ArrowIcon } from "@assets/svgs"
+
+<ArrowIcon />
+```
+
+## 🛠️ Customize for web platform
+
+Web not support require module like as react native
+
+We will just generate file path for web and support custom output file
+
+Configuration:
+
+```json
+{
+  "assets": [
+    { 
+      "pathDir": "/public/home",
+      "assetName": "homeIcons",
+      "platform": "web", 
+      "outputFile": "./gen/home-icons.ts"
+    },
+    { 
+      "pathDir": "/public/cart",
+      "assetName": "cartIcons",
+      "platform": "web", 
+      "outputFile": "./gen/cart-icons.ts"
+    },
+  ]
+}
 ```

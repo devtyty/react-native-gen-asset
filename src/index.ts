@@ -1,102 +1,139 @@
 #!/usr/bin/env bun
 
-import type { IAsset, IAssetConfig, IOuputAsset } from "./types";
+import { REGEX_EXTENSION_ASSET, type IAsset, type IAssetConfig } from "./types";
+export * from "./types";
+
 import { readdir } from "node:fs/promises";
 
 const configFileName = "asset.config.json";
-const REGEX_EXTENSION_ASSET = /\.(svg|png|apng|jpg|jpeg|webp|json|riv|ttf)$/gm;
 
-enum FileType {
-  SVG = "svg",
-  PNG = "png",
-  JPG = "JPG",
-  JPEG = "jpeg",
-  WEBP = "webp",
-  JSON = "json",
-  RIVE = "riv",
-}
-
-function capitalize(text: string) {
-  const arraySplitString = text.trim().split(/[-_\s]/);
-
-  return arraySplitString.reduce((pre, next) => {
-    return pre + next.slice(0, 1).toUpperCase() + next.slice(1, next.length);
-  }, "");
-}
-
-async function processFolderAsset(asset: IAsset): Promise<IOuputAsset> {
-  const pathDir = asset.pathDir;
-
-  const fullPath = process.cwd() + pathDir;
-
-  let fileDataContent = "";
-
-  const filesName = await readdir(fullPath);
-
-  for (const index in filesName) {
-    const file = filesName[index];
-
-    if (!file) {
-      continue;
-    }
-
+const Utils = {
+  capitalize(text: string) {
+    const arraySplitString = text.trim().split(/[-_\s]/);
+    return arraySplitString.reduce((pre, next) => {
+      return pre + next.slice(0, 1).toUpperCase() + next.slice(1, next.length);
+    }, "");
+  },
+  camelCase(text: string) {
+    const capitalized = this.capitalize(text);
+    return (
+      capitalized.slice(0, 1).toLowerCase() + capitalized.slice(1, text.length)
+    );
+  },
+  isValidFileExtension(fileName: string): boolean {
     /// ignore scale up files @2x, @3x
-    if (/@[\d,.]+x/gm.test(file)) {
-      continue;
+    if (/@[\d,.]+x/gm.test(fileName)) {
+      return false;
     }
 
-    /// validate các extension file support
-    if (!REGEX_EXTENSION_ASSET.test(file)) {
-      continue;
+    /// validate file's extension supported
+    return REGEX_EXTENSION_ASSET.test(fileName);
+  },
+
+  processItemContent(
+    asset: IAsset,
+    relativeFileName: string,
+    fullPath: string
+  ): string | undefined {
+    if (!relativeFileName || !Utils.isValidFileExtension(relativeFileName)) {
+      return;
     }
 
-    const newData = {
-      path: file,
-      name: capitalize(file.replace(REGEX_EXTENSION_ASSET, "")),
-    };
+    const capitalizeAssetName = Utils.capitalize(
+      relativeFileName.replace(REGEX_EXTENSION_ASSET, "")
+    );
 
-    /// set record to export
-    fileDataContent += `
-  /** How it display
-    *
-    * ![${newData.name}](${fullPath + "/" + newData.path})
-    * */
-  ${
-    newData.name[0]!.toLowerCase() + newData.name.slice(1, newData.name.length)
-  }: require("./${newData.path}"),`;
-  }
+    switch (asset.platform) {
+      case "web":
+        return `\n/** How it display\n*\n* ![${capitalizeAssetName}](${
+          fullPath + "/" + relativeFileName
+        })*\n*/\n${Utils.camelCase(capitalizeAssetName)}: "${
+          asset.pathDir
+        }/${relativeFileName}"`;
 
-  fileDataContent = `export const ${asset.assetName} = {${fileDataContent}\n};
+      case "native":
+      default:
+        return `\n/** How it display\n*\n* ![${capitalizeAssetName}](${
+          fullPath + "/" + relativeFileName
+        })*\n*/\n${Utils.camelCase(
+          capitalizeAssetName
+        )}: require("./${relativeFileName}")`;
+    }
+  },
 
-export type ${capitalize(
-    [asset.assetName, "type"].join(" "),
-  )} = keyof typeof ${asset.assetName};\n`;
+  async processFolderAsset(asset: IAsset) {
+    const fullPath = process.cwd() + asset.pathDir;
 
-  return {
-    fileDataContent: fileDataContent,
-    genFilePath: fullPath + "/index.ts",
-  };
-}
+    const filesName = await readdir(fullPath);
 
-// main entry
+    const contentItems = filesName
+      .map((relativeFileName) =>
+        Utils.processItemContent(asset, relativeFileName, fullPath)
+      )
+      .filter((item) => !!item) as string[];
+
+    const contentFilesGrouped = contentItems.join(",\n");
+
+    const output = `export const ${
+      asset.assetName
+    } = {${contentFilesGrouped}\n};\n\nexport type ${Utils.capitalize(
+      [asset.assetName, "type"].join(" ")
+    )} = keyof typeof ${asset.assetName};\n`;
+
+    const outputFile = asset.outputFile ?? fullPath + "/index.ts";
+
+    const newFile = Bun.file(outputFile);
+    return newFile.write(output);
+  },
+
+  async processSvgTransformAsset(asset: IAsset) {
+    const fullPath = process.cwd() + asset.pathDir;
+
+    let stringifyExport = `import type { SvgProps } from "react-native-svg";\n`;
+
+    const filesName: Array<{ path: string; name: string }> = [];
+
+    const files = await readdir(fullPath);
+
+    /// Read list svg files
+    files.forEach((file) => {
+      const regexSplitDot = RegExp(/^(.+?)\./gm);
+
+      const test = regexSplitDot.exec(file.trim());
+
+      if (test !== null && test[1] && test[1] !== "index") {
+        filesName.push({ path: file, name: Utils.capitalize(test[1]) });
+      }
+    });
+    filesName.forEach((file, index) => {
+      stringifyExport += `${index === 0 ? "" : "\n"}
+/** How it display
+ *
+ * ![${file.name}](${fullPath}/${file.path})
+ * */
+export const ${file.name}: React.FC<SvgProps> = function ${file.name}(props) {
+  return require("./${file.path}").default(props);
+}`;
+    });
+
+    if (stringifyExport !== "") {
+      const newFile = Bun.file(fullPath + "/index.ts");
+      return newFile.write(stringifyExport);
+    }
+  },
+};
+
 (async function main() {
+  // main process
   const configFile = Bun.file(configFileName);
   const content: IAssetConfig = await configFile.json();
 
-  // handle format declaration files
-  const results = await Promise.all(
-    content.assets.map((asset) => processFolderAsset(asset)),
-  );
-
   // create file generating
-  await Promise.all(
-    results.map((item) => {
-      if (item.fileDataContent !== "") {
-        const newFile = Bun.file(item.genFilePath);
-        return newFile.write(item.fileDataContent);
-      }
+  content.assets.forEach((asset: IAsset) => {
+    if (asset.useSvgTransform) {
+      return Utils.processSvgTransformAsset(asset);
+    }
 
-      return Promise.resolve();
-    }),
-  );
+    return Utils.processFolderAsset(asset);
+  });
 })();
