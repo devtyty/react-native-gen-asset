@@ -1,7 +1,11 @@
 # Changelog
 
-## v1.1.0
+## v1.1.1
+### Features
 
+- Fix publish script
+
+## v1.1.0
 ### Features
 
 - Support svg transform format by babel

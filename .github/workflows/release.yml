@@ -62,7 +62,11 @@ jobs:
             exit 1
           fi
 
-          sed -n "/## $VERSION/,/## /p" CHANGELOG.md | sed '$d' > release.md
+          awk -v ver="$VERSION" '
+            $0 == "## " ver {flag=1; next}
+            /^## v/ && flag {exit}
+            flag
+          ' CHANGELOG.md > release.md
 
           echo "📄 Release notes:"
           cat release.md

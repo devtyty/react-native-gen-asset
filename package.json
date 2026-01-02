@@ -1,7 +1,7 @@
 {
   "name": "@megabeelabs/react-native-gen-asset",
   "module": "index.ts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "author": {
     "email": "truongvanty1608@gmail.com",
@@ -43,7 +43,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev:watch": "bun build ./src/index.ts --outdir ./dist --watch",
-    "build:types": "tsc --project tsconfig.json"
+    "build:types": "tsc --project tsconfig.json",
+    "prepare": "bun run build && bun run build:types"
   },
   "bin": {
     "@megabeelabs/react-native-gen-asset": "dist/index.js"
